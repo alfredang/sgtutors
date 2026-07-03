@@ -1,0 +1,11 @@
+node_modules
+*/node_modules
+dist
+client/dist
+server/dist
+.git
+.env
+uploads
+.playwright-mcp
+*.png
+!screenshot.png
