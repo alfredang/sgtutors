@@ -8,7 +8,9 @@ COPY package.json package-lock.json ./
 COPY client/package.json client/
 COPY server/package.json server/
 COPY shared/package.json shared/
-RUN npm ci
+# --include=dev: build tools (tsc, vite) and runtime runner (tsx, drizzle-kit) are
+# devDeps, and Coolify injects NODE_ENV=production as a build arg which would skip them
+RUN npm ci --include=dev
 
 # Copy source and build the client bundle
 COPY . .
