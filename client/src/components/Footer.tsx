@@ -40,6 +40,7 @@ export function Footer() {
           <ul className="mt-3 space-y-2 text-sm text-slate-600">
             <li>admin@sgtutors.local</li>
             <li>Singapore</li>
+            <li><Link to="/privacy" className="hover:text-brand-600">Privacy Policy</Link></li>
           </ul>
         </div>
       </div>

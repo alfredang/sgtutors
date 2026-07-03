@@ -11,6 +11,7 @@ import { DashboardPage } from "./pages/Dashboard";
 import { InterviewPage } from "./pages/Interview";
 import { AdminLoginPage } from "./pages/AdminLogin";
 import { AdminPage } from "./pages/Admin";
+import { PrivacyPage } from "./pages/Privacy";
 
 function Layout() {
   return (
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
       { path: "/tutors", element: <TutorSearchPage /> },
       { path: "/tutors/:id", element: <TutorDetailPage /> },
       { path: "/signup", element: <SignupPage /> },
+      { path: "/privacy", element: <PrivacyPage /> },
       { path: "/login", element: <LoginPage /> },
       {
         element: <ProtectedRoute />,
