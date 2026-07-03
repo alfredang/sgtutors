@@ -1,0 +1,24 @@
+{
+  "name": "sgtutors",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Singapore Tutors Marketplace",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"npm -w server run dev\" \"npm -w client run dev\"",
+    "build": "npm -w shared run build && npm -w client run build && npm -w server run build",
+    "start": "NODE_ENV=production node server/dist/index.js",
+    "db:up": "docker compose up -d db",
+    "db:push": "npm -w server run db:push",
+    "db:seed": "npm -w server run db:seed",
+    "stripe:listen": "stripe listen --forward-to localhost:4000/api/webhooks/stripe"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "drizzle-orm": "^0.38.3"
+  }
+}

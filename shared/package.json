@@ -1,0 +1,14 @@
+{
+  "name": "@sgtutors/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "echo 'shared is consumed as TS source'"
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
+  }
+}
