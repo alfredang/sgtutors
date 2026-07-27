@@ -45,6 +45,17 @@ export function GoogleSignIn({
 }) {
   const holder = useRef<HTMLDivElement>(null);
   const [clientId, setClientId] = useState<string | null>(null);
+  /** GSI is a global singleton — initialize() must run once per client id. */
+  const initialised = useRef(false);
+
+  /* Keep the latest callbacks in refs so the mount effect doesn't re-run when
+     the parent passes new inline function identities on each render. */
+  const onSuccessRef = useRef(onSuccess);
+  const onErrorRef = useRef(onError);
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+  });
 
   useEffect(() => {
     void api
@@ -58,18 +69,23 @@ export function GoogleSignIn({
 
     const mount = () => {
       if (!window.google || !holder.current) return;
+      // React 18 StrictMode double-invokes effects in dev; without this guard
+      // GSI logs "initialize() is called multiple times".
+      if (initialised.current) return;
+      initialised.current = true;
+
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: async (response: { credential: string }) => {
           try {
             await api.post("/api/auth/social/google", { idToken: response.credential });
-            await onSuccess();
+            await onSuccessRef.current();
           } catch (err) {
             const msg =
               err instanceof ApiError && err.status === 404
                 ? "No tutor account matches that Google account. Please sign up first — it's free."
                 : "Google sign-in failed. Please try again.";
-            onError?.(msg);
+            onErrorRef.current?.(msg);
           }
         },
       });
@@ -101,7 +117,7 @@ export function GoogleSignIn({
     script.defer = true;
     script.onload = mount;
     document.head.appendChild(script);
-  }, [clientId, onSuccess, onError]);
+  }, [clientId]);
 
   if (!clientId) return null;
 
