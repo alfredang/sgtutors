@@ -8,3 +8,12 @@ uploads/
 *.png
 !screenshot.png
 gdrive-service-account.json
+
+# Distribution archives (rebuildable — never pushed to GitHub)
+*.zip
+
+# Source material the project was derived from — not ours to republish.
+**/reference/
+
+# TypeScript incremental build info
+*.tsbuildinfo

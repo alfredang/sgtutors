@@ -119,9 +119,15 @@ Pay S$50 (Stripe) ──▶ Upload NRIC + cert (+CV) ──▶ 10-min AI intervi
                               score < 70 ──▶ Appeal ──▶ Live interview ──▶ Admin decision
 ```
 
+## Mobile
+
+The native iOS app — **[Tertiary SGTutors on the App Store](https://apps.apple.com/sg/app/tertiary-sgtutors/id6787160558)**
+— consumes the same REST API as the web client. A download badge links to it from
+the site footer.
+
 ## Roadmap
 
-- Native iOS and Android apps consuming the same REST API
+- Native Android app consuming the same REST API
 
 ## Acknowledgements
 
