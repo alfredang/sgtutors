@@ -10,6 +10,9 @@ import { authTutorRouter } from "./routes/authTutor.js";
 import { tutorRouter } from "./routes/tutor.js";
 import { adminRouter } from "./routes/admin.js";
 import { stripeWebhookRouter } from "./routes/stripeWebhook.js";
+import { authSocialRouter } from "./routes/authSocial.js";
+import { leadsRouter } from "./routes/leads.js";
+import { seoRouter } from "./routes/seo.js";
 import { startRetentionSweeper } from "./services/retention.js";
 
 const app = express();
@@ -31,8 +34,14 @@ app.use(
 
 app.use("/api", publicRouter);
 app.use("/api/auth/tutor", authTutorRouter);
+app.use("/api/auth/social", authSocialRouter);
+app.use("/api/leads", leadsRouter);
 app.use("/api/tutor", tutorRouter);
 app.use("/api/admin", adminRouter);
+
+// Served at the site root (not /api) — crawlers expect /sitemap.xml.
+// Must be mounted before the SPA catch-all below.
+app.use("/", seoRouter);
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 

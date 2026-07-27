@@ -14,6 +14,17 @@ const envSchema = z.object({
     .default("postgres://postgres:postgres@localhost:5433/sgtutors"),
   PORT: z.coerce.number().default(4000),
   APP_URL: z.string().default("http://localhost:5173"),
+  // Public origin used in sitemap/canonical URLs (falls back to APP_URL).
+  PUBLIC_SITE_URL: z.string().optional(),
+  // Social login (web: Google; iOS: Google + Apple)
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  // The iOS app's Google client has a different audience than the web client.
+  GOOGLE_IOS_CLIENT_ID: z.string().optional(),
+  APPLE_CLIENT_ID: z.string().optional(),
+  APPLE_TEAM_ID: z.string().optional(),
+  APPLE_KEY_ID: z.string().optional(),
+  APPLE_PRIVATE_KEY: z.string().optional(),
   JWT_SECRET: z.string().default("dev-tutor-secret"),
   ADMIN_JWT_SECRET: z.string().default("dev-admin-secret"),
   IP_HASH_SALT: z.string().default("dev-salt"),

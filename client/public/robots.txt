@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Private / authenticated areas — no crawl value, and some contain PII.
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /login
+Disallow: /admin/login
+
+# Filtered search permutations are near-duplicates of /tutors.
+# The canonical tag handles indexing; this keeps crawl budget on real pages.
+Disallow: /tutors?*
+
+Sitemap: https://sgtutors.tertiaryinfotech.com/sitemap.xml

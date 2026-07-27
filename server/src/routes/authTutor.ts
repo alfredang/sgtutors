@@ -104,7 +104,9 @@ authTutorRouter.post(
   asyncHandler(async (req, res) => {
     const { email, password } = loginSchema.parse(req.body);
     const [tutor] = await db.select().from(tutors).where(eq(tutors.email, email));
-    if (!tutor || !(await bcrypt.compare(password, tutor.passwordHash))) {
+    // Social-only accounts have no password hash — reject without leaking which
+    // accounts exist, and without passing null into bcrypt.compare.
+    if (!tutor || !tutor.passwordHash || !(await bcrypt.compare(password, tutor.passwordHash))) {
       throw new HttpError(401, "Invalid email or password");
     }
     setTutorCookie(res, tutor.id);

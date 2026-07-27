@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { TutorCard } from "../components/TutorCard";
 import { Pagination } from "../components/Pagination";
+import { Seo } from "../components/Seo";
 import { REGIONS, REGION_LABELS } from "@sgtutors/shared";
 import type { PublicTutor, Subject, Level, Paginated } from "@sgtutors/shared";
 
@@ -42,6 +43,27 @@ export function TutorSearchPage() {
       .finally(() => setLoading(false));
   }, [subject, level, gender, region, q, page]);
 
+  /* Title mirrors how parents actually search: "{subject} tuition singapore",
+     "{level} {subject} tutor", "tuition in {region}". */
+  const subjectName = subjects.find((s) => s.slug === subject)?.name ?? "";
+  const levelName = levels.find((l) => l.slug === level)?.name ?? "";
+  const regionName = region ? REGION_LABELS[region as keyof typeof REGION_LABELS] : "";
+
+  const seoTitle = [
+    levelName,
+    subjectName || "Private",
+    subjectName ? "Tutors" : "Tutors",
+    regionName ? `in ${regionName}` : "in Singapore",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const seoDescription = `Browse ${
+    result?.total ? `${result.total} ` : ""
+  }verified ${levelName ? `${levelName} ` : ""}${
+    subjectName ? `${subjectName} ` : ""
+  }tutors${regionName ? ` in ${regionName}` : " in Singapore"}. Compare qualifications, experience and reviews — enquire free.`;
+
   const update = (patch: Record<string, string>) => {
     const next = new URLSearchParams(params);
     for (const [k, v] of Object.entries(patch)) {
@@ -54,8 +76,15 @@ export function TutorSearchPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-3xl font-bold text-slate-900">Find a Tutor</h1>
-      <p className="mt-1 text-slate-500">
+      <Seo
+        title={seoTitle}
+        description={seoDescription}
+        path="/tutors"
+        /* Filtered permutations would be near-duplicate pages — point them all
+           at the clean /tutors canonical rather than letting them compete. */
+      />
+      <h1 className="font-display text-3xl font-extrabold text-slate-900">Find a Tutor</h1>
+      <p className="mt-1 text-slate-600">
         Featured and verified tutors appear first.
       </p>
 
@@ -133,7 +162,7 @@ export function TutorSearchPage() {
       ) : (
         <>
           <p className="mt-6 text-sm text-slate-500">{result.total} tutor(s) found</p>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid gap-4 pt-3 sm:grid-cols-2 lg:grid-cols-3">
             {result.items.map((t) => (
               <TutorCard key={t.id} tutor={t} />
             ))}

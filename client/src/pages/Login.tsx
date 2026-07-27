@@ -2,6 +2,8 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth } from "../lib/auth";
+import { GoogleSignIn } from "../components/GoogleSignIn";
+import { Seo } from "../components/Seo";
 
 type Mode = "password" | "otp" | "forgot";
 
@@ -97,7 +99,15 @@ export function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="text-center text-3xl font-bold text-slate-900">Tutor Login</h1>
+      <Seo
+        title="Tutor Login"
+        description="Log in to your SG Tutors tutor account."
+        path="/login"
+        noindex
+      />
+      <h1 className="text-center font-display text-3xl font-extrabold text-slate-900">
+        Tutor Login
+      </h1>
 
       <div className="card mt-8">
         {/* Mode tabs */}
@@ -141,6 +151,9 @@ export function LoginPage() {
             </button>
           </form>
         )}
+
+        {/* Social sign-in — renders only when Google OAuth is configured. */}
+        {mode === "password" && <GoogleSignIn onSuccess={finish} onError={setError} />}
 
         {mode === "otp" && (
           <form onSubmit={submitOtp} className="space-y-4">

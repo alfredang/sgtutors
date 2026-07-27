@@ -8,6 +8,7 @@ import { Turnstile } from "../components/Turnstile";
 import { GENDER_LABELS, RACE_LABELS, NATIONALITY_LABELS, REGION_LABELS } from "@sgtutors/shared";
 import type { PublicTutor, Review, Paginated } from "@sgtutors/shared";
 import { ShareButtons } from "../components/ShareButtons";
+import { Seo, tutorSchema } from "../components/Seo";
 
 export function TutorDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -47,8 +48,26 @@ export function TutorDetailPage() {
     );
   }
 
+  const subjectList = tutor.subjects.map((s) => s.name).join(", ");
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
+      <Seo
+        title={`${tutor.displayName} — ${subjectList || "Private"} Tutor in ${REGION_LABELS[tutor.region]}`}
+        description={`${tutor.displayName} is a${tutor.isVerified ? " verified" : ""} tutor in ${REGION_LABELS[tutor.region]}, Singapore with ${tutor.experienceYears} years' experience teaching ${subjectList || "various subjects"}. ${tutor.highestQualification}. Enquire free on SG Tutors.`}
+        path={`/tutors/${tutor.id}`}
+        image={tutor.photoUrl ?? undefined}
+        jsonLd={tutorSchema({
+          id: tutor.id,
+          displayName: tutor.displayName,
+          photoUrl: tutor.photoUrl,
+          highestQualification: tutor.highestQualification,
+          subjects: tutor.subjects,
+          avgRating: tutor.avgRating,
+          reviewCount: tutor.reviewCount,
+          region: REGION_LABELS[tutor.region],
+        })}
+      />
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Main profile */}
         <div className="space-y-6 lg:col-span-2">

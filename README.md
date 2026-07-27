@@ -26,6 +26,7 @@ by invisible Cloudflare Turnstile.
 - **Privacy by design**: NRIC, date of birth, address, mobile and email are never exposed — only a coarse region (North, North-West, …) is shown
 - Enquiry form (emails the tutor + admin) guarded by **invisible Cloudflare Turnstile**
 - Social sharing (WhatsApp, Telegram, Facebook, X) on every tutor profile
+- Free **tuition rate guide** lead magnet with PDPA-compliant consent and one-click unsubscribe
 
 ### For tutors
 - Free 1-year listing with one-click renewal; camera-captured passport photo with **automatic AI background removal** (client-side WASM)
@@ -33,7 +34,7 @@ by invisible Cloudflare Turnstile.
 - Appeal flow with admin-scheduled **live interview** for failed candidates
 - **Featured placement (S$100 / 3 months)** for verified tutors — top of search + homepage
 - LinkedIn profile link (displayed only while verified)
-- Login with password or **email OTP**; forgot-password reset flow
+- Login with password, **email OTP**, or **Sign in with Google**; forgot-password reset flow
 
 ### Admin dashboard
 - **Overview analytics**: total & monthly revenue chart, popular tutors ranked by enquiries, verified/featured lists
@@ -44,21 +45,27 @@ by invisible Cloudflare Turnstile.
 
 ```
 sgtutors/
-├── client/                 # React 18 + Vite + TypeScript + Tailwind (white theme, mobile-first)
+├── client/                 # React 18 + Vite + TypeScript + Tailwind (light, colourful, mobile-first)
+│   ├── public/             # robots.txt, guides/ (lead-magnet assets)
 │   └── src/
 │       ├── pages/          # Home, TutorSearch, TutorDetail, Signup, Login, Dashboard,
 │       │                   # Interview (AI chat), Admin, AdminLogin
 │       ├── components/     # Navbar (subject mega-menu), TutorCard, CameraCapture,
-│       │                   # Turnstile (invisible), ShareButtons, badges…
+│       │                   # Turnstile (invisible), ShareButtons, badges,
+│       │                   # Seo (per-route meta + JSON-LD), LeadMagnet, GoogleSignIn
 │       └── lib/            # photoPipeline (capture → bg-removal → white bg → 35:45 crop)
 ├── server/                 # Express + TypeScript + Drizzle ORM
+│   ├── migrations/         # Hand-applied SQL (see the migration note below)
 │   └── src/
 │       ├── db/             # schema, seed (subjects/levels/admin), mockTutors
-│       ├── routes/         # public API, tutor auth (+OTP), tutor, admin, Stripe webhook
+│       ├── routes/         # public API, tutor auth (+OTP), social auth, leads,
+│       │                   # seo (sitemap.xml), tutor, admin, Stripe webhook
 │       └── services/       # sanitize (PII whitelist), interview (Claude Agent SDK),
 │                           # stripe, storage (Cloudflare R2), gdrive, retention, otp,
 │                           # email, turnstile
 ├── shared/                 # Types, enums and zod validation shared by both sides
+├── docs/                   # SOCIAL-LOGIN.md
+├── .agents/                # product-marketing.md + installed marketing/design skills
 └── docker-compose.yml      # PostgreSQL 16 (host port 5433)
 ```
 
@@ -107,8 +114,63 @@ All settings live in `.env` (see `.env.example` for full notes):
 | Cloudflare R2 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE_URL` | Profile photo storage |
 | Google Drive | `GDRIVE_PARENT_FOLDER_ID`, `GDRIVE_SERVICE_ACCOUNT_JSON` | Verification document archive |
 | Email | `SMTP_*`, `EMAIL_DEV_MODE` | Enquiry/OTP/status emails (dev mode logs to console) |
+| Social login | `GOOGLE_CLIENT_ID`, `GOOGLE_IOS_CLIENT_ID`, `APPLE_CLIENT_ID` | Google (web + iOS) and Apple (iOS) sign-in — see [docs/SOCIAL-LOGIN.md](docs/SOCIAL-LOGIN.md) |
+| SEO | `PUBLIC_SITE_URL`, `VITE_SITE_ORIGIN` | Absolute URLs in the sitemap and canonical tags |
+
+Social login is entirely optional: with no keys set the Google button doesn't render
+and the endpoints return 503. Nothing else changes.
 
 Stripe webhooks in development: `npm run stripe:listen`.
+
+### Migrations
+
+⚠️ **Use `psql`, not `drizzle-kit push`, for the social-login/leads migration.**
+`push` offers to *truncate the tutors table* when adding the new UNIQUE constraints,
+which would destroy live listings. Apply the checked-in SQL instead — it is
+idempotent and non-destructive:
+
+```bash
+docker exec -i sgtutors-pg psql -U postgres -d sgtutors \
+  < server/migrations/001-social-login-and-leads.sql
+```
+
+## SEO
+
+The client is a Vite SPA, so per-route metadata is applied at runtime by
+`client/src/components/Seo.tsx` — title, description, canonical, robots, Open Graph
+(`en_SG`) and Twitter cards, plus JSON-LD:
+
+| Page | Structured data |
+|---|---|
+| Home | `WebSite` (with `SearchAction`) + `FAQPage` |
+| Tutor profile | `Person` + `AggregateRating` |
+| Sitewide | `Organization` |
+
+`Person` schema is fed only the **public whitelist** — never NRIC, DOB, address,
+mobile or email. `/sitemap.xml` is generated on request from the database (static
+routes + every live tutor), so new listings are discoverable without a rebuild.
+Dashboard, admin and login routes are `noindex` and disallowed in `robots.txt`.
+
+> **Caveat:** runtime tags are read by crawlers that execute JavaScript (Google), but
+> **not** by most link unfurlers (WhatsApp, Telegram, Slack), which only parse the
+> served HTML. Prerendering or SSR is the follow-up if rich link previews matter.
+
+## Design system
+
+Light, colourful and deliberately trust-forward — a marketplace handling payments and
+identity documents. Tokens live in `client/tailwind.config.js`:
+
+| Token | Use |
+|---|---|
+| `brand` (indigo) | Trust anchor — primary actions, links |
+| `sunny` (amber) | Featured/premium — paid S$100 placements |
+| `grass` (green) | Verified state, positive outcomes |
+| `coral` / `sky` | Subject chips and category variety |
+
+Type is **Nunito** (display) + **DM Sans** (body). Featured tutor cards are
+structurally distinct — amber frame, gradient wash, "Top Pick" ribbon and a larger
+photo — rather than a plain card with a badge. Reduced-motion is honoured, focus
+rings are branded rather than removed, and `.btn-*` targets are ≥44px.
 
 ## Verification flow
 

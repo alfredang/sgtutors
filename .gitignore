@@ -17,3 +17,7 @@ gdrive-service-account.json
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Skill symlinks — the real files live in .agents/skills/ (committed).
+# `npx skills add` recreates these locally.
+.claude/skills/

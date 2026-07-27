@@ -106,7 +106,8 @@ export const tutors = pgTable(
     email: text("email").notNull().unique(),
     mobile: text("mobile").notNull(),
     address: text("address").notNull().default(""),
-    passwordHash: text("password_hash").notNull(),
+    // Nullable: social-only accounts (Google/Apple) never set a password.
+    passwordHash: text("password_hash"),
     // PUBLIC
     displayName: text("display_name").notNull(),
     gender: genderEnum("gender").notNull().default("male"),
@@ -134,6 +135,10 @@ export const tutors = pgTable(
     featuredUntil: timestamp("featured_until", { withTimezone: true }),
     isActive: boolean("is_active").notNull().default(true),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    // SOCIAL LOGIN — subject ids from the provider. Never displayed publicly.
+    // Web offers Google; the iOS app offers Google + Apple (App Store rule 4.8).
+    googleSub: text("google_sub").unique(),
+    appleSub: text("apple_sub").unique(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -329,3 +334,29 @@ export const admins = pgTable("admins", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * Marketing leads captured by the lead magnet (tuition rate guide).
+ *
+ * PDPA: consent is explicit and recorded with a timestamp and the stated
+ * purpose, so we can evidence it. `unsubscribedAt` is the withdrawal record —
+ * rows are kept (not deleted) so a withdrawal can't be silently undone by a
+ * later re-import.
+ */
+export const leads = pgTable(
+  "leads",
+  {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    email: text("email").notNull().unique(),
+    source: text("source").notNull().default("rate-guide"),
+    consent: boolean("consent").notNull().default(false),
+    consentAt: timestamp("consent_at", { withTimezone: true }),
+    // Hashed, never raw — same treatment as enquiry IPs elsewhere.
+    ipHash: text("ip_hash"),
+    unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("leads_created_idx").on(t.createdAt)]
+);

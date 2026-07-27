@@ -2,7 +2,52 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { TutorCard } from "../components/TutorCard";
+import { LeadMagnet } from "../components/LeadMagnet";
+import { Seo, faqSchema, websiteSchema } from "../components/Seo";
 import type { PublicTutor, Subject, Level, Paginated } from "@sgtutors/shared";
+
+/** Rotating chip colours so the subject strip reads as varied categories. */
+const SUBJECT_CHIPS = [
+  "border-brand-200 bg-brand-50 text-brand-700 hover:border-brand-400",
+  "border-coral-200 bg-coral-50 text-coral-700 hover:border-coral-400",
+  "border-sky-200 bg-sky-50 text-sky-700 hover:border-sky-400",
+  "border-grass-200 bg-grass-50 text-grass-700 hover:border-grass-400",
+  "border-sunny-200 bg-sunny-50 text-sunny-800 hover:border-sunny-400",
+];
+
+const LEVEL_TILES = [
+  "text-brand-700 hover:bg-brand-50",
+  "text-coral-700 hover:bg-coral-50",
+  "text-sky-700 hover:bg-sky-50",
+  "text-grass-700 hover:bg-grass-50",
+];
+
+/**
+ * Home FAQ — also the source for the FAQPage JSON-LD in seo.ts.
+ * Answers must stay factually true to the product; they are indexed.
+ */
+export const HOME_FAQS = [
+  {
+    q: "How much does tuition cost in Singapore?",
+    a: "Rates vary by level and tutor experience — part-time tutors typically charge less than full-time or ex-MOE tutors, and rates rise from primary to JC level. Each tutor on SG Tutors sets and displays their own rate, so you can compare before enquiring. Enquiring is always free.",
+  },
+  {
+    q: "What does the verified badge actually mean?",
+    a: "A verified tutor has passed three checks: identity (NRIC), qualification review (their highest certificate), and a subject-knowledge interview of 8 questions scored by AI, with a pass mark of 70%. Tutors who fail can appeal for a live interview with our team.",
+  },
+  {
+    q: "Is it free to contact a tutor?",
+    a: "Yes. Searching tutors and sending an enquiry is completely free for students and parents. We charge tutors, not families.",
+  },
+  {
+    q: "How do I find a tutor near me?",
+    a: "Use the region filter on the search page to narrow tutors to your area of Singapore — North, North-East, East, West or Central. You can combine this with subject and level filters.",
+  },
+  {
+    q: "Is my personal data safe?",
+    a: "Yes. Tutor NRIC numbers, dates of birth, addresses, phone numbers and email addresses are never displayed publicly — only a coarse region is shown. Verification documents are deleted three months after verification.",
+  },
+];
 
 const VERIFY_STEPS = [
   {
@@ -45,52 +90,110 @@ export function HomePage() {
   const [recent, setRecent] = useState<PublicTutor[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [levels, setLevels] = useState<Level[]>([]);
+  const [totalTutors, setTotalTutors] = useState<number | null>(null);
   const [q, setQ] = useState("");
 
   useEffect(() => {
     void api.get<PublicTutor[]>("/api/tutors/featured").then(setFeatured).catch(() => {});
     void api
       .get<Paginated<PublicTutor>>("/api/tutors?page=1")
-      .then((r) => setRecent(r.items))
+      .then((r) => {
+        setRecent(r.items);
+        setTotalTutors(r.total);
+      })
       .catch(() => {});
     void api.get<Subject[]>("/api/subjects").then(setSubjects).catch(() => {});
     void api.get<Level[]>("/api/levels").then(setLevels).catch(() => {});
   }, []);
 
+  /* Stats are derived from live API data — never invented marketing numbers. */
+  const trustStats = [
+    {
+      value: totalTutors === null ? "—" : `${totalTutors}`,
+      label: "Tutors listed",
+      color: "text-brand-600",
+    },
+    {
+      value: subjects.length ? `${subjects.length}` : "—",
+      label: "Subjects covered",
+      color: "text-coral-600",
+    },
+    { value: "8 Qs", label: "AI interview to pass", color: "text-sky-600" },
+    { value: "S$0", label: "To enquire", color: "text-grass-600" },
+  ];
+
   return (
     <div>
+      <Seo
+        title="Find Trusted, Verified Tutors in Singapore"
+        description="Search verified private tutors in Singapore by subject, level and region. Every verified tutor passed identity checks, qualification review and a subject-knowledge interview. Free to enquire."
+        path="/"
+        jsonLd={[websiteSchema(), faqSchema(HOME_FAQS)]}
+      />
+
       {/* Hero */}
-      <section className="bg-gradient-to-b from-brand-50 to-white">
-        <div className="mx-auto max-w-6xl px-4 py-16 text-center sm:py-24">
-          <h1 className="mx-auto max-w-3xl text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-            Find a <span className="text-brand-600">trusted tutor</span> in Singapore
+      <section className="relative overflow-hidden bg-mesh-soft">
+        <div className="relative mx-auto max-w-6xl px-4 py-16 text-center sm:py-24">
+          <span className="inline-flex animate-fade-up items-center gap-2 rounded-full border border-brand-100 bg-white/80 px-4 py-1.5 text-sm font-semibold text-brand-700 shadow-sm backdrop-blur">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-grass-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-grass-500" />
+            </span>
+            Every tutor identity-checked &amp; interviewed
+          </span>
+
+          <h1 className="mx-auto mt-6 max-w-3xl font-display text-4xl font-extrabold tracking-tight text-slate-900 sm:text-6xl">
+            Find a <span className="text-gradient">trusted tutor</span> in Singapore
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+          <p className="mx-auto mt-5 max-w-2xl text-lg text-slate-600">
             Every verified tutor has passed identity checks, qualification review and
             a subject-knowledge interview. Search by subject and level — enquire for free.
           </p>
+
           <form
-            className="mx-auto mt-8 flex max-w-xl gap-2"
+            className="mx-auto mt-8 flex max-w-xl flex-col gap-2 sm:flex-row"
             onSubmit={(e) => {
               e.preventDefault();
               navigate(`/tutors${q ? `?q=${encodeURIComponent(q)}` : ""}`);
             }}
+            role="search"
           >
+            <label htmlFor="hero-search" className="sr-only">
+              Search tutors by subject or level
+            </label>
             <input
-              className="input flex-1"
+              id="hero-search"
+              className="input flex-1 bg-white shadow-sm sm:py-3"
               placeholder="Try 'H2 Mathematics' or 'Physics'…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
-            <button className="btn-primary shrink-0">Search Tutors</button>
+            <button className="btn-primary shrink-0 sm:px-7">Search Tutors</button>
           </form>
-          <p className="mt-4 text-sm text-slate-500">
+
+          <p className="mt-4 text-sm text-slate-600">
             Are you a tutor?{" "}
-            <Link to="/signup" className="font-semibold text-brand-600 hover:underline">
+            <Link to="/signup" className="font-semibold text-brand-600 underline-offset-2 hover:underline">
               List yourself free
             </Link>{" "}
             — your listing stays live for a full year.
           </p>
+
+          {/* Trust stats — social proof above the fold. */}
+          <dl className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+            {trustStats.map((s) => (
+              <div
+                key={s.label}
+                className="rounded-2xl border border-white bg-white/70 px-3 py-4 shadow-sm backdrop-blur"
+              >
+                <dt className="sr-only">{s.label}</dt>
+                <dd>
+                  <div className={`font-display text-2xl font-extrabold ${s.color}`}>{s.value}</div>
+                  <div className="mt-0.5 text-xs font-medium text-slate-600">{s.label}</div>
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
@@ -103,7 +206,7 @@ export function HomePage() {
               View all →
             </Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 pt-3 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((t) => (
               <TutorCard key={t.id} tutor={t} />
             ))}
@@ -113,18 +216,18 @@ export function HomePage() {
 
       {/* Popular subjects strip (full list lives in the nav dropdown) */}
       <section id="subjects" className="mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-900">Popular Subjects</h2>
-          <span className="text-sm text-slate-400">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="section-title">Popular Subjects</h2>
+          <span className="text-sm text-slate-500">
             Full list under “Browse by Subject” in the menu
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
-          {subjects.slice(0, 12).map((s) => (
+          {subjects.slice(0, 12).map((s, i) => (
             <Link
               key={s.id}
               to={`/tutors?subject=${s.slug}`}
-              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm text-slate-700 transition hover:border-brand-500 hover:bg-brand-50 hover:text-brand-700"
+              className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition duration-200 hover:-translate-y-0.5 hover:shadow-sm ${SUBJECT_CHIPS[i % SUBJECT_CHIPS.length]}`}
             >
               {s.name}
             </Link>
@@ -134,13 +237,13 @@ export function HomePage() {
 
       {/* Levels */}
       <section id="levels" className="mx-auto max-w-6xl px-4 py-6">
-        <h2 className="mb-6 text-2xl font-bold text-slate-900">Browse by Level</h2>
+        <h2 className="mb-6 section-title">Browse by Level</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {levels.map((l) => (
+          {levels.map((l, i) => (
             <Link
               key={l.id}
               to={`/tutors?level=${l.slug}`}
-              className="card py-4 text-center font-semibold text-slate-700 transition hover:border-brand-500 hover:text-brand-700"
+              className={`card card-hover flex items-center justify-center gap-2 py-5 text-center font-display font-bold ${LEVEL_TILES[i % LEVEL_TILES.length]}`}
             >
               {l.name}
             </Link>
@@ -200,12 +303,38 @@ export function HomePage() {
             No tutors listed yet — be the first!
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 pt-3 sm:grid-cols-2 lg:grid-cols-3">
             {recent.map((t) => (
               <TutorCard key={t.id} tutor={t} />
             ))}
           </div>
         )}
+      </section>
+
+      {/* Lead magnet — low-commitment capture for parents not ready to enquire. */}
+      <LeadMagnet />
+
+      {/* FAQ — mirrored into FAQPage JSON-LD for rich results. */}
+      <section id="faq" className="mx-auto max-w-3xl px-4 py-12">
+        <h2 className="section-title text-center">Frequently Asked Questions</h2>
+        <div className="mt-8 space-y-3">
+          {HOME_FAQS.map((f) => (
+            <details
+              key={f.q}
+              className="card group overflow-hidden transition hover:border-brand-300"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display font-bold text-slate-900">
+                {f.q}
+                <span className="shrink-0 text-brand-500 transition group-open:rotate-45" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                    <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                  </svg>
+                </span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">{f.a}</p>
+            </details>
+          ))}
+        </div>
       </section>
     </div>
   );
